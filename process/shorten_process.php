@@ -1,21 +1,29 @@
 <?php
-require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
-requireLogin();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $original_url = mysqli_real_escape_string($conn, $_POST['url']);
     $short_code = generateShortCode();
 
-    $user_id = $_SESSION['user_id'];
-    $query = "INSERT INTO urls (user_id, original_url, short_code) VALUES ('$user_id', '$original_url', '$short_code')";
+    // Check if the URL already exists
+    $query = "SELECT * FROM urls WHERE original_url = '$original_url'";
+    $result = mysqli_query($conn, $query);
 
-    if (mysqli_query($conn, $query)) {
-        header('Location: ' . BASE_URL . 'pages/dashboard.php');
-        exit();
+    if (mysqli_num_rows($result) > 0) {
+        $url = mysqli_fetch_assoc($result);
+        echo getShortUrl($url['short_code']);
     } else {
-        die("Error: " . mysqli_error($conn));
+        // Insert the new URL
+        $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
+        $guest = $user_id ? 0 : 1; // Mark as guest if not logged in
+
+        $query = "INSERT INTO urls (user_id, original_url, short_code, guest) VALUES ('$user_id', '$original_url', '$short_code', '$guest')";
+        if (mysqli_query($conn, $query)) {
+            echo getShortUrl($short_code);
+        } else {
+            echo 'Error shortening URL.';
+        }
     }
 }
 ?>
