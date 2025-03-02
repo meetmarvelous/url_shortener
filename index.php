@@ -3,10 +3,34 @@ require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/auth.php';
 
+// Handle short URL redirection
+if (isset($_GET['q'])) {
+    $short_code = $_GET['q'];
+    $query = "SELECT * FROM urls WHERE short_code = '$short_code'";
+    $result = mysqli_query($conn, $query);
+
+    if (mysqli_num_rows($result) > 0) {
+        $url = mysqli_fetch_assoc($result);
+
+        // Increment hits
+        $hits = $url['hits'] + 1;
+        $update_query = "UPDATE urls SET hits = $hits WHERE id = {$url['id']}";
+        mysqli_query($conn, $update_query);
+
+        // Redirect to the original URL
+        header("Location: {$url['original_url']}");
+        exit();
+    } else {
+        header('HTTP/1.0 404 Not Found');
+        echo 'Short URL not found.';
+        exit();
+    }
+}
+
+// Handle URL shortening form submission
 $error = '';
 $short_url = '';
 
-// Handle URL shortening
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
     $original_url = mysqli_real_escape_string($conn, $_POST['url']);
     $short_code = generateShortCode();
@@ -19,17 +43,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
         $url = mysqli_fetch_assoc($result);
         $short_url = getShortUrl($url['short_code']);
     } else {
-        // Insert the new URL
-        $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NULL'; // Use NULL for guest users
-        $guest = $user_id === 'NULL' ? 1 : 0; // Mark as guest if user_id is NULL
+        $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NULL';
+        $guest = $user_id === 'NULL' ? 1 : 0;
 
         $query = "INSERT INTO urls (user_id, original_url, short_code, guest) VALUES ($user_id, '$original_url', '$short_code', '$guest')";
         if (mysqli_query($conn, $query)) {
             $short_url = getShortUrl($short_code);
+
+            // If user is not logged in, save the link in a cookie
+            if (!isLoggedIn()) {
+                $guest_links = isset($_COOKIE['guest_links']) ? json_decode($_COOKIE['guest_links'], true) : [];
+                $guest_links[] = [
+                    'original_url' => $original_url,
+                    'short_code' => $short_code,
+                    'created_at' => date('Y-m-d H:i:s')
+                ];
+                setcookie('guest_links', json_encode($guest_links), time() + (86400 * 30), "/"); // 30 days
+            }
         } else {
             $error = 'Error shortening URL.';
         }
     }
+
+    header('Location: ' . BASE_URL . '?short_url=' . urlencode($short_url));
+    exit();
 }
 
 // Fetch user's URLs if logged in
@@ -48,60 +85,133 @@ if (isLoggedIn()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>URL Shortener</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs5/dt-1.13.4/datatables.min.css"/>
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/styles.css">
 </head>
 <body>
-    <h1>URL Shortener</h1>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="<?php echo BASE_URL; ?>">URL Shortener</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <?php if (isLoggedIn()): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="logout.php">Logout</a>
+                        </li>
+                    <?php else: ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="login.php">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="signup.php">Signup</a>
+                        </li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-    <!-- URL Shortening Form -->
-    <?php if ($error): ?>
-        <p style="color: red;"><?php echo $error; ?></p>
-    <?php endif; ?>
-    <form method="POST" action="">
-        <label for="url">Enter URL to shorten:</label>
-        <input type="url" name="url" id="url" required>
-        <button type="submit">Shorten</button>
-    </form>
+    <!-- Main Content -->
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title mb-0">Shorten a URL</h3>
+                    </div>
+                    <div class="card-body">
+                        <?php if ($error): ?>
+                            <div class="alert alert-danger"><?php echo $error; ?></div>
+                        <?php endif; ?>
+                        <form method="POST" action="">
+                            <div class="mb-3">
+                                <label for="url" class="form-label">Enter URL to shorten:</label>
+                                <input type="url" name="url" id="url" class="form-control" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Shorten</button>
+                        </form>
+                    </div>
+                </div>
 
-    <!-- Display Short URL -->
-    <?php if ($short_url): ?>
-        <p>Short URL: <a href="<?php echo $short_url; ?>" target="_blank"><?php echo $short_url; ?></a></p>
-    <?php endif; ?>
+                <?php if (isset($_GET['short_url'])): ?>
+                    <div class="card mt-4 shadow">
+                        <div class="card-header bg-success text-white">
+                            <h3 class="card-title mb-0">Short URL</h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">Your short URL: <a href="<?php echo $_GET['short_url']; ?>" target="_blank"><?php echo $_GET['short_url']; ?></a></p>
+                        </div>
+                    </div>
+                <?php endif; ?>
 
-    <!-- Login/Signup or Logout Links -->
-    <p>
-        <?php if (isLoggedIn()): ?>
-            <a href="logout.php">Logout</a>
-        <?php else: ?>
-            <a href="login.php">Login</a> | <a href="signup.php">Signup</a> to manage your links.
-        <?php endif; ?>
-    </p>
+                <?php if (isLoggedIn() && !empty($urls)): ?>
+                    <div class="card mt-4 shadow">
+                        <div class="card-header bg-info text-white">
+                            <h3 class="card-title mb-0">Your Links</h3>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-striped" id="linksTable">
+                                <thead>
+                                    <tr>
+                                        <th>Original URL</th>
+                                        <th>Short URL</th>
+                                        <th>Hits</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($urls as $url): ?>
+                                        <tr>
+                                            <td class="text-truncate" style="max-width: 200px;" title="<?php echo $url['original_url']; ?>"><?php echo $url['original_url']; ?></td>
+                                            <!-- <td>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><?php echo BASE_URL; ?></span>
+                                                    <input type="text" class="form-control" value="<?php echo $url['short_code']; ?>" readonly>
+                                                </div>
+                                            </td> -->
+                                            <td><a href="<?php echo getShortUrl($url['short_code']); ?>" target="_blank"><?php echo getShortUrl($url['short_code']); ?></a></td>
+                                            <td><?php echo $url['hits']; ?></td>
+                                            <!-- <td>
+                                                <a href="edit.php?id=<?php echo $url['id']; ?>" class="btn btn-sm btn-warning">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            </td> -->
+                                            <td>
+                                                <a href="edit.php?id=<?php echo $url['id']; ?>" class="btn btn-sm btn-warning">Edit</a>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
 
-    <!-- Dashboard Table (Visible Only When Logged In) -->
-    <?php if (isLoggedIn() && !empty($urls)): ?>
-        <h2>Your Links</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Original URL</th>
-                    <th>Short URL</th>
-                    <th>Hits</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($urls as $url): ?>
-                <tr>
-                    <td><?php echo $url['original_url']; ?></td>
-                    <td><a href="<?php echo getShortUrl($url['short_code']); ?>" target="_blank"><?php echo getShortUrl($url['short_code']); ?></a></td>
-                    <td><?php echo $url['hits']; ?></td>
-                    <td>
-                        <a href="edit.php?id=<?php echo $url['id']; ?>">Edit</a>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php endif; ?>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- DataTables JS -->
+    <script type="text/javascript" src="https://cdn.datatables.net/v/bs5/dt-1.13.4/datatables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#linksTable').DataTable({
+                responsive: true,
+                columnDefs: [
+                    { orderable: false, targets: [3] },
+                    { className: "text-nowrap", targets: [3] }
+                ]
+            });
+        });
+    </script>
 </body>
 </html>

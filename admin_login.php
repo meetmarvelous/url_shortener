@@ -10,40 +10,24 @@ if (isLoggedIn()) {
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = mysqli_real_escape_string($conn, $_POST['username']);
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
+    $password = $_POST['password'];
 
-    // Check if username or email already exists
-    $query = "SELECT * FROM users WHERE username = '$username' OR email = '$email'";
+    $query = "SELECT * FROM users WHERE username = '$username' AND role = 'admin'";
     $result = mysqli_query($conn, $query);
 
-    if (mysqli_num_rows($result) > 0) {
-        $error = 'Username or email already exists.';
-    } else {
-        $query = "INSERT INTO users (username, email, password) VALUES ('$username', '$email', '$password')";
-        if (mysqli_query($conn, $query)) {
-            $user_id = mysqli_insert_id($conn);
-
-            // Transfer guest links to the new user
-            if (isset($_COOKIE['guest_links'])) {
-                $guest_links = json_decode($_COOKIE['guest_links'], true);
-                foreach ($guest_links as $link) {
-                    $query = "UPDATE urls SET user_id = $user_id, guest = 0 WHERE short_code = '{$link['short_code']}'";
-                    mysqli_query($conn, $query);
-                }
-                setcookie('guest_links', '', time() - 3600, "/"); // Delete the cookie
-            }
-
-            // Log in the user
-            $_SESSION['user_id'] = $user_id;
-            $_SESSION['username'] = $username;
-            $_SESSION['role'] = 'user';
-
-            header('Location: index.php');
+    if (mysqli_num_rows($result) === 1) {
+        $user = mysqli_fetch_assoc($result);
+        if (password_verify($password, $user['password'])) {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['role'] = $user['role'];
+            header('Location: admin_dashboard.php');
             exit();
         } else {
-            $error = 'Error creating account.';
+            $error = 'Invalid password.';
         }
+    } else {
+        $error = 'Admin username not found.';
     }
 }
 ?>
@@ -53,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Signup</title>
+    <title>Admin Login</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Custom CSS -->
@@ -73,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="col-md-6">
                 <div class="card shadow">
                     <div class="card-header bg-primary text-white">
-                        <h3 class="card-title mb-0">Signup</h3>
+                        <h3 class="card-title mb-0">Admin Login</h3>
                     </div>
                     <div class="card-body">
                         <?php if ($error): ?>
@@ -85,16 +69,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="text" name="username" id="username" class="form-control" required>
                             </div>
                             <div class="mb-3">
-                                <label for="email" class="form-label">Email:</label>
-                                <input type="email" name="email" id="email" class="form-control" required>
-                            </div>
-                            <div class="mb-3">
                                 <label for="password" class="form-label">Password:</label>
                                 <input type="password" name="password" id="password" class="form-control" required>
                             </div>
-                            <button type="submit" class="btn btn-primary">Signup</button>
+                            <button type="submit" class="btn btn-primary">Login</button>
                         </form>
-                        <p class="mt-3">Already have an account? <a href="login.php">Login here</a>.</p>
                     </div>
                 </div>
             </div>

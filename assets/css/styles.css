@@ -1,55 +1,65 @@
-/* Basic Styling */
+/* Custom Styles */
 body {
-  font-family: Arial, sans-serif;
-  margin: 20px;
+  background-color: #f8f9fa;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-
-table, th, td {
-  border: 1px solid #ddd;
-}
-
-th, td {
-  padding: 10px;
-  text-align: left;
-}
-
-th {
-  background-color: #f4f4f4;
-}
-
-a {
-  color: #007bff;
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
-form {
-  margin-top: 20px;
-}
-
-input[type="url"] {
-  width: 300px;
-  padding: 8px;
-  margin-right: 10px;
-}
-
-button {
-  padding: 8px 16px;
-  background-color: #007bff;
-  color: white;
+.card {
   border: none;
-  cursor: pointer;
+  border-radius: 10px;
 }
 
-button:hover {
-  background-color: #0056b3;
+.card-header {
+  border-radius: 10px 10px 0 0;
+}
+
+.btn-primary {
+  background-color: #0d6efd;
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: #0b5ed7;
+}
+
+.alert {
+  border-radius: 5px;
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table th, .table td {
+  vertical-align: middle;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Improved table responsiveness */
+.table-responsive {
+  overflow-x: auto;
+}
+
+/* Truncate long URLs */
+.text-truncate {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Card hover effects */
+.card-hover:hover {
+  transform: translateY(-5px);
+  transition: all 0.3s ease;
+}
+
+/* Input group styling */
+.input-group-text {
+  background-color: #e9ecef;
+  color: #495057;
+  font-weight: 500;
 }

@@ -14,7 +14,7 @@ function isAdmin() {
 // Redirect if not logged in
 function requireLogin() {
     if (!isLoggedIn()) {
-        header('Location: ' . BASE_URL . 'pages/login.php');
+        header('Location: login.php');
         exit();
     }
 }
@@ -22,7 +22,7 @@ function requireLogin() {
 // Redirect if not admin
 function requireAdmin() {
     if (!isAdmin()) {
-        header('Location: ' . BASE_URL . 'pages/dashboard.php');
+        header('Location: admin_login.php');
         exit();
     }
 }
