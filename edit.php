@@ -103,6 +103,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
+    <!-- Footer -->
+    <footer class="footer mt-auto py-4 bg-dark text-white">
+        <div class="container text-center">
+            <div class="mb-3">
+                <span class="fs-5">
+                    This link shortener is made by
+                    <a href="https://marvelbyte.vercel.app/" target="_blank" class="text-decoration-none text-warning hover-glow">
+                        Marvelous
+                    </a>
+                </span>
+            </div>
+            <div>
+                <a href="https://github.com/meetmarvelous" target="_blank" class="btn btn-outline-warning btn-sm">
+                    <i class="bi bi-github"></i> Visit My GitHub
+                </a>
+            </div>
+        </div>
+    </footer>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>

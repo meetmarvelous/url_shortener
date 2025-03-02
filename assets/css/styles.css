@@ -63,3 +63,11 @@ body {
   color: #495057;
   font-weight: 500;
 }
+
+.hover-glow {
+  transition: all 0.3s ease;
+}
+.hover-glow:hover {
+  color: #ffc107 !important; /* Bootstrap's warning color */
+  text-shadow: 0 0 8px rgba(255, 193, 7, 0.8);
+}
