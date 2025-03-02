@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/db.php';
 requireAdmin(); // Ensure only admins can access this page
 
@@ -173,26 +174,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_password'])) {
                 <h5 class="mb-0">Recent Users</h5>
             </div>
             <div class="card-body">
-                <table class="table table-hover" id="usersTable">
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Created At</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($recentUsers as $user): ?>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="usersTable">
+                        <thead>
                             <tr>
-                                <td><?php echo $user['username']; ?></td>
-                                <td><?php echo $user['email']; ?></td>
-                                <td><?php echo $user['role']; ?></td>
-                                <td><?php echo $user['created_at']; ?></td>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Created At</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recentUsers as $user): ?>
+                                <tr>
+                                    <td><?php echo $user['username']; ?></td>
+                                    <td><?php echo $user['email']; ?></td>
+                                    <td><?php echo $user['role']; ?></td>
+                                    <td><?php echo $user['created_at']; ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -202,28 +205,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_password'])) {
                 <h5 class="mb-0">Recent Links</h5>
             </div>
             <div class="card-body">
-                <table class="table table-hover" id="linksTable">
-                    <thead>
-                        <tr>
-                            <th>Original URL</th>
-                            <th>Short Code</th>
-                            <th>Created By</th>
-                            <th>Hits</th>
-                            <th>Created At</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($recentLinks as $link): ?>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="linksTable">
+                        <thead>
                             <tr>
-                                <td class="text-truncate" style="max-width: 200px;" title="<?php echo $link['original_url']; ?>"><?php echo $link['original_url']; ?></td>
-                                <td><?php echo $link['short_code']; ?></td>
-                                <td><?php echo $link['username'] ?? 'Guest'; ?></td>
-                                <td><?php echo $link['hits']; ?></td>
-                                <td><?php echo $link['created_at']; ?></td>
+                                <th>Original URL</th>
+                                <th>Short Code</th>
+                                <th>Created By</th>
+                                <th>Hits</th>
+                                <th>Created At</th>
+                                <th>Share</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recentLinks as $link): ?>
+                                <tr>
+                                    <td class="text-truncate" style="max-width: 200px;" title="<?php echo $link['original_url']; ?>"><?php echo $link['original_url']; ?></td>
+                                    <td><?php echo $link['short_code']; ?></td>
+                                    <td><?php echo $link['username'] ?? 'Guest'; ?></td>
+                                    <td><?php echo $link['hits']; ?></td>
+                                    <td><?php echo $link['created_at']; ?></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-secondary copy-btn" data-short-url="<?php echo getShortUrl($link['short_code']); ?>">
+                                            <i class="bi bi-clipboard"></i> Copy
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-primary share-btn" data-short-url="<?php echo getShortUrl($link['short_code']); ?>">
+                                            <i class="bi bi-share"></i> Share
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -251,6 +265,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_password'])) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <!-- DataTables JS -->
     <script type="text/javascript" src="https://cdn.datatables.net/v/bs5/dt-1.13.4/datatables.min.js"></script>
+    <!-- Clipboard.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.10/clipboard.min.js"></script>
     <script>
         $(document).ready(function() {
             $('#usersTable').DataTable({
@@ -266,6 +282,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_password'])) {
                     [4, 'desc']
                 ]
             });
+        });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+
+            // Copy button functionality
+            document.querySelectorAll('.copy-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const shortUrl = button.getAttribute('data-short-url');
+                    navigator.clipboard.writeText(shortUrl).then(() => {
+                        alert('Copied to clipboard!');
+                    }).catch(err => {
+                        console.error('Copy failed:', err);
+                    });
+                });
+            });
+
+            // Share button functionality
+            document.querySelectorAll('.share-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const shortUrl = button.getAttribute('data-short-url');
+                    if (navigator.share) {
+                        navigator.share({
+                            title: 'Short URL',
+                            text: 'Check out this short URL:',
+                            url: shortUrl
+                        }).catch(err => console.error('Share failed:', err));
+                    } else {
+                        alert('Sharing is not supported in your browser.');
+                    }
+                });
+            });
+
+
         });
     </script>
 </body>

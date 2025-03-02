@@ -81,7 +81,6 @@ if (isLoggedIn()) {
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -89,11 +88,10 @@ if (isLoggedIn()) {
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- DataTables CSS -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs5/dt-1.13.4/datatables.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs5/dt-1.13.4/datatables.min.css"/>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/styles.css">
 </head>
-
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -167,17 +165,23 @@ if (isLoggedIn()) {
                                 <table class="table table-striped" id="linksTable">
                                     <thead>
                                         <tr>
-                                            <th>Share</th>
                                             <th>Original URL</th>
                                             <th>Short URL</th>
                                             <th>Hits</th>
                                             <th>Actions</th>
+                                            <th>Share</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php foreach ($urls as $url): ?>
                                             <tr>
-                                            <td>
+                                                <td class="text-truncate" style="max-width: 200px;" title="<?php echo $url['original_url']; ?>"><?php echo $url['original_url']; ?></td>
+                                                <td><a href="<?php echo getShortUrl($url['short_code']); ?>" target="_blank"><?php echo getShortUrl($url['short_code']); ?></a></td>
+                                                <td><?php echo $url['hits']; ?></td>
+                                                <td>
+                                                    <a href="edit.php?id=<?php echo $url['id']; ?>" class="btn btn-sm btn-warning">Edit</a>
+                                                </td>
+                                                <td>
                                                     <button class="btn btn-sm btn-outline-secondary copy-btn" data-short-url="<?php echo getShortUrl($url['short_code']); ?>">
                                                         <i class="bi bi-clipboard"></i> Copy
                                                     </button>
@@ -185,13 +189,6 @@ if (isLoggedIn()) {
                                                         <i class="bi bi-share"></i> Share
                                                     </button>
                                                 </td>
-                                                <td class="text-truncate" style="max-width: 200px;" title="<?php echo $url['original_url']; ?>"><?php echo $url['original_url']; ?></td>
-                                                <td><a href="<?php echo getShortUrl($url['short_code']); ?>" target="_blank"><?php echo getShortUrl($url['short_code']); ?></a></td>
-                                                <td><?php echo $url['hits']; ?></td>
-                                                <td>
-                                                    <a href="edit.php?id=<?php echo $url['id']; ?>" class="btn btn-sm btn-warning">Edit</a>
-                                                </td>
-                                                
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>
@@ -233,53 +230,40 @@ if (isLoggedIn()) {
         $(document).ready(function() {
             $('#linksTable').DataTable({
                 responsive: true,
-                columnDefs: [{
-                        orderable: false,
-                        targets: [3, 4]
-                    },
-                    {
-                        className: "text-nowrap",
-                        targets: [3, 4]
-                    }
+                columnDefs: [
+                    { orderable: false, targets: [3, 4] },
+                    { className: "text-nowrap", targets: [3, 4] }
                 ]
             });
+
         });
     </script>
-
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
 
-            // Copy button functionality
-            document.querySelectorAll('.copy-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    const shortUrl = button.getAttribute('data-short-url');
-                    navigator.clipboard.writeText(shortUrl).then(() => {
-                        alert('Copied to clipboard!');
-                    }).catch(err => {
-                        console.error('Copy failed:', err);
-                    });
-                });
+           // Copy button functionality
+           new ClipboardJS('.copy-btn', {
+                text: function(trigger) {
+                    return trigger.getAttribute('data-short-url');
+                }
             });
 
             // Share button functionality
-            document.querySelectorAll('.share-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    const shortUrl = button.getAttribute('data-short-url');
-                    if (navigator.share) {
-                        navigator.share({
-                            title: 'Short URL',
-                            text: 'Check out this short URL:',
-                            url: shortUrl
-                        }).catch(err => console.error('Share failed:', err));
-                    } else {
-                        alert('Sharing is not supported in your browser.');
-                    }
-                });
+            $('.share-btn').on('click', function() {
+                const shortUrl = $(this).data('short-url');
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'Short URL',
+                        text: 'Check out this short URL:',
+                        url: shortUrl
+                    });
+                } else {
+                    alert('Sharing is not supported in your browser.');
+                }
             });
 
 
-        });
-    </script>
+    });
+</script>
 </body>
-
 </html>

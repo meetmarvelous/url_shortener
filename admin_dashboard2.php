@@ -63,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_password'])) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -70,10 +71,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_password'])) {
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- DataTables CSS -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs5/dt-1.13.4/datatables.min.css"/>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs5/dt-1.13.4/datatables.min.css" />
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/styles.css">
 </head>
+
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -98,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_password'])) {
     <!-- Main Content -->
     <div class="container my-5">
         <h2 class="mb-4">Admin Dashboard</h2>
-        
+
         <!-- Stats Cards -->
         <div class="row mb-4">
             <div class="col-md-6 col-lg-3 mb-3">
@@ -171,6 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_password'])) {
                 <h5 class="mb-0">Recent Users</h5>
             </div>
             <div class="card-body">
+            <div class="table-responsive">
                 <table class="table table-hover" id="usersTable">
                     <thead>
                         <tr>
@@ -191,6 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_password'])) {
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
 
@@ -200,6 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_password'])) {
                 <h5 class="mb-0">Recent Links</h5>
             </div>
             <div class="card-body">
+            <div class="table-responsive">
                 <table class="table table-hover" id="linksTable">
                     <thead>
                         <tr>
@@ -222,9 +227,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_password'])) {
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-4 bg-dark text-white">
+        <div class="container text-center">
+            <div class="mb-3">
+                <span class="fs-5">
+                    This link shortener is made by
+                    <a href="https://marvelbyte.vercel.app/" target="_blank" class="text-decoration-none text-warning hover-glow">
+                        Marvelous
+                    </a>
+                </span>
+            </div>
+            <div>
+                <a href="https://github.com/meetmarvelous" target="_blank" class="btn btn-outline-warning btn-sm">
+                    <i class="bi bi-github"></i> Visit My GitHub
+                </a>
+            </div>
+        </div>
+    </footer>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
@@ -234,14 +259,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_password'])) {
         $(document).ready(function() {
             $('#usersTable').DataTable({
                 responsive: true,
-                order: [[3, 'desc']]
+                order: [
+                    [3, 'desc']
+                ]
             });
 
             $('#linksTable').DataTable({
                 responsive: true,
-                order: [[4, 'desc']]
+                order: [
+                    [4, 'desc']
+                ]
             });
         });
     </script>
 </body>
+
 </html>
