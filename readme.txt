@@ -32,3 +32,6 @@
 
 No root index page.
 No form page to shorten link. Login shouldnt be compulsory on this page but if you want to be able to manage links, login or signup.
+
+
+Add the dashboard table to the index page such that it shows when logged only.
